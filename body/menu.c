@@ -7,7 +7,7 @@ void fenge(){
         printf("\n");
 }
 
-void main_meun (){
+void main_menu (){
     printf("欢迎使用景区路径规划系统\n");
     fenge();
     printf("1.创建景区景点图\n");
