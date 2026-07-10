@@ -17,6 +17,19 @@ int change(char x[])
     return -1;
 }
 
+// 下标转文字
+char rechange(int x[])
+{
+    for (int i = 0; i < g.spot; i++)
+    {
+        if (strcmp(g.name[i], x) == 0)
+        {
+            return g.name;
+        }
+    }
+    return -1;
+}
+
 // 创建新的邻接矩阵
 void create()
 {
@@ -26,7 +39,7 @@ void create()
     {
         for (int j = 0; j < MAX; j++)
         {
-            g.graph[i][j] = 32767;
+            g.graph[i][j] = INF;
         }
 
         //对角线为0
@@ -70,7 +83,7 @@ void create()
     printf("景区景点图创建成功！");
 }
 
-//
+//输出邻接矩阵
 void show_graph()
 {
     printf("景区景点分布图（邻接矩阵）：\n");

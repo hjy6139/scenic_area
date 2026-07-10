@@ -23,17 +23,17 @@ int main (){
 
         //3.导游线路
         case 3:
-            //DFS();
+            show_DFS();
             break;
 
         //4.导游线路中的回路
         case 4:
-            //cycle();
+            show_cycle();
             break;
 
         //5.两个景点间的最短路径和距离
         case 5:
-            //Dijkstra();
+            show_Dijkstra();
             break;
 
         //0.退出系统
