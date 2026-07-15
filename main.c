@@ -2,50 +2,46 @@
 #include "head/menu.h"
 #include "head/graph.h"
 
-
-int main (){
-    main_menu();
-
+int main()
+{
     int op;
-    while(1){
-    scanf("%d",&op);
+
+    while (1)
+    {
+        main_menu();
+        if (scanf("%d", &op) != 1)
+        {
+            printf("输入错误，请重新输入！\n");
+            while (getchar() != '\n')
+            {
+            }
+            continue;
+        }
+
         switch (op)
         {
-        //1.创建景区景点图
         case 1:
             create();
             break;
-
-        //2.景区景点分布图
         case 2:
             show_graph();
             break;
-
-        //3.导游线路
         case 3:
             show_DFS();
             break;
-
-        //4.导游线路中的回路
         case 4:
             show_cycle();
             break;
-
-        //5.两个景点间的最短路径和距离
         case 5:
             show_Dijkstra();
             break;
-
-        //0.退出系统
         case 0:
             return 0;
-        
-        //输入不合法
         default:
-            printf("输入错误，请重新输入！");
+            printf("输入错误，请重新输入！\n");
             break;
         }
     }
-    
+
     return 0;
 }

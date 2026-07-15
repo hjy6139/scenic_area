@@ -1,111 +1,238 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "../head/graph.h"
 
-Graph g;
-SeqList sl;
+static SeqList sl;
 
-//顺序表初始化
-void InitSeaList(SeqList* sl,int initCap){
-    sl->data = (int*)malloc(sizeof(int) * initCap);
+void InitSeaList(SeqList *sl, int initCap)
+{
+    if (sl->data)
+    {
+        free(sl->data);
+    }
+    sl->data = (int *)malloc(sizeof(int) * initCap);
     sl->length = 0;
     sl->capacity = initCap;
 }
 
-//尾插法存表
-void AddData(SeqList* sl, int x){
-
-       // 判断是否满了，满了扩容
-    if (sl->length >= sl->capacity) {
+void AddData(SeqList *sl, int x)
+{
+    if (sl->length >= sl->capacity)
+    {
         sl->capacity *= 2;
-        sl->data = (int*)realloc(sl->data, sizeof(int) * sl->capacity);
+        sl->data = (int *)realloc(sl->data, sizeof(int) * sl->capacity);
     }
-
-    // 存入数据，长度+1
     sl->data[sl->length] = x;
     sl->length++;
 }
 
-//递归法DFS
-int DFS(int son,int parent,int visited[],SeqList* sl){
+static void appendVertex(SeqList *path, int v)
+{
+    if (path->length > 0 && path->data[path->length - 1] == v)
+    {
+        return;
+    }
+    AddData(path, v);
+}
 
-    visited[son]=1;
-    AddData(sl,son);
-
-    for (int i=1;i<=g.spot;i++){
-
-        if(g.graph[son][i]!=INF){
-
-             //邻顶点未访问
-            if(!visited[i]){
-                if (DFS(i,son,visited,sl)){    
-                    return 1;
-                }
-            }
-
-            //邻顶点已访问
-             else if(son!=parent){
-                return 1;
-            }
+static int hasUnvisitedRemaining(int visited[])
+{
+    for (int i = 0; i < g.spot; i++)
+    {
+        if (!visited[i])
+        {
+            return 1;
         }
     }
     return 0;
 }
 
- 
-void show_DFS(){
-    
-    InitSeaList(&sl,MAX);
-
-    printf("请输入起点：");
-    char Jd[20];
-    scanf("%s",Jd);
-    int jd=change(Jd);
-    
-    printf("导游路线为：");
-  
-    for (int i=0;i<sl.length;i++){
-
-        //下标转字符串
-           char *name[MAX]=rechang(sl.data[i]);
-
-        if (i==0){
-              printf("%s",Jd);
+static int isAncestor(int anc, int v, int treeParent[])
+{
+    int p = treeParent[v];
+    while (p != -1)
+    {
+        if (p == anc)
+        {
+            return 1;
         }
-        else{
-            printf("-%s",name[i]);
-        }
-   
+        p = treeParent[p];
     }
-
+    return 0;
 }
 
-//DFS遍历法判断是否有回路
-void show_cycle(){
-    printf("请输入起点:");
-    char Begin[MAX];
-    scanf("%s",Begin);
-    int begin=change(Begin);
+void generateGuideRoute(SeqList *path)
+{
+    path->length = 0;
+    InitSeaList(path, MAX);
 
-    int* visited = (int*)calloc(g.spot + 1, sizeof(int));
-    int road=DFS(begin,-1,visited,&sl);
+    int visited[MAX] = {0};
+    int treeParent[MAX];
+    for (int i = 0; i < MAX; i++)
+    {
+        treeParent[i] = -1;
+    }
 
-    if (road){
-        printf("图中有回路,回路为:");
-        for (int i=0;i<sl.length;i++){
-            char Begin[MAX]=rechange(begin);
-            if (i == 0){
-                pintf("%s", Begin);
-                 }
-            else{
-                printf("→%s", Begin);
-                }
+    int current = 0;
+    visited[0] = 1;
+    appendVertex(path, 0);
+
+    int guard = 0;
+    while (guard++ < g.spot * g.spot * 2)
+    {
+        int next = -1;
+        for (ArcNode *p = g.adjlist[current]; p != NULL; p = p->next)
+        {
+            if (!visited[p->adjvex])
+            {
+                next = p->adjvex;
+                treeParent[next] = current;
+                visited[next] = 1;
+                appendVertex(path, next);
+                current = next;
+                break;
             }
         }
-                
-    else{
-         printf("该图中无回路");
+        if (next != -1)
+        {
+            continue;
+        }
+
+        if (!hasUnvisitedRemaining(visited))
+        {
+            break;
+        }
+
+        int shortcut = -1;
+        int allVisitedNeighbors = 1;
+        for (ArcNode *p = g.adjlist[current]; p != NULL; p = p->next)
+        {
+            if (!visited[p->adjvex])
+            {
+                allVisitedNeighbors = 0;
+            }
+            else if (p->adjvex != treeParent[current] && shortcut == -1)
+            {
+                shortcut = p->adjvex;
+            }
+        }
+
+        if (allVisitedNeighbors && shortcut != -1 &&
+            isAncestor(shortcut, current, treeParent))
+        {
+            appendVertex(path, shortcut);
+            current = shortcut;
+            continue;
+        }
+
+        int back = treeParent[current];
+        while (back != -1)
+        {
+            appendVertex(path, back);
+            for (ArcNode *p = g.adjlist[back]; p != NULL; p = p->next)
+            {
+                if (!visited[p->adjvex])
+                {
+                    treeParent[p->adjvex] = back;
+                    visited[p->adjvex] = 1;
+                    appendVertex(path, p->adjvex);
+                    current = p->adjvex;
+                    goto continueLoop;
+                }
+            }
+            back = treeParent[back];
+        }
+        break;
+
+    continueLoop:
+        continue;
     }
-       
+}
+
+static void printRoute(SeqList *path)
+{
+    for (int i = 0; i < path->length; i++)
+    {
+        if (i == 0)
+        {
+            printf("%s", rechange(path->data[i]));
+        }
+        else
+        {
+            printf("-%s", rechange(path->data[i]));
+        }
+    }
+    printf("-\n");
+}
+
+static int extractCycle(SeqList *path, int cycle[], int *cycleLen)
+{
+    int firstPos[MAX];
+    for (int i = 0; i < g.spot; i++)
+    {
+        firstPos[i] = -1;
+    }
+
+    for (int i = 0; i < path->length; i++)
+    {
+        int v = path->data[i];
+        if (firstPos[v] != -1)
+        {
+            *cycleLen = 0;
+            for (int j = firstPos[v]; j <= i; j++)
+            {
+                cycle[(*cycleLen)++] = path->data[j];
+            }
+            return 1;
+        }
+        firstPos[v] = i;
+    }
+    return 0;
+}
+
+void show_DFS()
+{
+    if (g.spot == 0)
+    {
+        printf("??????????????????\n");
+        return;
+    }
+
+    generateGuideRoute(&sl);
+    printf("???????????\n");
+    printRoute(&sl);
+}
+
+void show_cycle()
+{
+    if (g.spot == 0)
+    {
+        printf("??????????????????\n");
+        return;
+    }
+
+    generateGuideRoute(&sl);
+
+    int cycle[MAX];
+    int cycleLen = 0;
+    if (extractCycle(&sl, cycle, &cycleLen))
+    {
+        printf("??????????????????");
+        for (int i = 0; i < cycleLen; i++)
+        {
+            if (i == 0)
+            {
+                printf("%s", rechange(cycle[i]));
+            }
+            else
+            {
+                printf("-%s", rechange(cycle[i]));
+            }
+        }
+        printf("\n");
+    }
+    else
+    {
+        printf("??????????\n");
+    }
 }

@@ -1,27 +1,22 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "../head/graph.h"
-
-Graph g;
-
 
 void Dijkstra(int start, int end, int n, int dist[], int pre[], int visited[])
 {
-    //初始化
-    for (int i = 1; i <= n; i++)
+    for (int i = 0; i < n; i++)
     {
         dist[i] = g.graph[start][i];
         visited[i] = 0;
         pre[i] = start;
     }
     visited[start] = 1;
+    pre[start] = -1;
 
-    for (int j = 1; j <= n - 1; j++)
+    for (int j = 0; j < n - 1; j++)
     {
         int u = -1;
-        int wu = INF; //无通路
-        for (int k = 1; k <= n; k++)
+        int wu = INF;
+        for (int k = 0; k < n; k++)
         {
             if (!visited[k] && dist[k] < wu)
             {
@@ -30,13 +25,17 @@ void Dijkstra(int start, int end, int n, int dist[], int pre[], int visited[])
             }
         }
 
-        //u最短路径
-        if (u == -1) break;
+        if (u == -1)
+        {
+            break;
+        }
         visited[u] = 1;
-        if (u == end) break;
+        if (u == end)
+        {
+            break;
+        }
 
-        //以u为基准
-        for (int v = 1; v <= n; v++)
+        for (int v = 0; v < n; v++)
         {
             if (!visited[v] && g.graph[u][v] != INF && dist[u] + g.graph[u][v] < dist[v])
             {
@@ -47,46 +46,54 @@ void Dijkstra(int start, int end, int n, int dist[], int pre[], int visited[])
     }
 }
 
-//打印路线
-void Print(int cur, int st)
+static void Print(int cur, int st, int pre[])
+{
+    if (cur == st)
     {
-        int pre[MAX];
-        if(cur == st)
-        {
-            printf("%s", rechang(cur));
-            return;
-        }
-        Print(pre[cur], st);
-        printf("→ %s", rechang(cur));
+        printf("%s", rechange(cur));
+        return;
+    }
+    Print(pre[cur], st, pre);
+    printf(" → %s", rechange(cur));
+}
+
+void show_Dijkstra()
+{
+    if (g.spot == 0)
+    {
+        printf("请先创建景区景点图！\n");
+        return;
     }
 
-void show_Dijkstra(){
     int dist[MAX];
     int pre[MAX];
-    int n=g.spot;
-    int visited[n+1];
+    int n = g.spot;
+    int visited[MAX];
     char Start[20];
     char End[20];
 
-    printf("请输入起点景点名称:");
-    scanf("%s",Start);
-    int start=change(Start);
-    printf("请输入终点景点名称:");
-    scanf("%s",End);
-    int end=change(End);
+    printf("请输入起点景点名称：");
+    scanf("%s", Start);
+    int start = change(Start);
+    printf("请输入终点景点名称：");
+    scanf("%s", End);
+    int end = change(End);
+
+    if (start == -1 || end == -1)
+    {
+        printf("输入的景点名称不存在！\n");
+        return;
+    }
 
     Dijkstra(start, end, n, dist, pre, visited);
 
     if (dist[end] == INF)
     {
-        printf("从【%s】到【%s】无可达路径!\n", Start, End);
+        printf("从【%s】到【%s】无可达路径！\n", Start, End);
         return;
     }
 
-    printf("从【%s】到【%s】的最短路径为:\n", Start, End);
-
-    
-    Print(end, start);
-
-    printf("\n最短距离为:%d\n", dist[end]);
+    printf("从【%s】到【%s】的最短路径为：\n", Start, End);
+    Print(end, start, pre);
+    printf("\n最短距离为：%d\n", dist[end]);
 }
